@@ -58,7 +58,6 @@ public class RetrofitUtil2 {
             @Override
             public void onResponse(Call<BaseNetBean<E>> call, Response<BaseNetBean<E>> response) {
                 BaseNetBean<E> baseBean = response.body();
-
                 CommonHelper.parseStandardJsonObj(baseBean,urlTail,params,myListener,RetrofitUtil2.this);
 
             }

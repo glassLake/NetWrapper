@@ -35,15 +35,24 @@ public abstract class MyNetCallback<T> {
             onSuccess(response,responseStr);
     }
 
-    public  void onSuccess(String body){
-        onSuccess(null,body);
-    }
+
 
     /**
      * Callback method that an error has been occurred with the
      * provided error code and optional user-readable message.
      */
     public void onError(String error) {}
+
+
+    /**
+     * 有错误码的error
+     * @param error
+     * @param msg
+     * @param code
+     */
+    public void onCodeError(String error,String msg,int code) {
+        onError(msg);
+    }
 
 
     public void onCancel() {}
@@ -69,6 +78,9 @@ public abstract class MyNetCallback<T> {
     }
 
 
+    /**
+     * 只需要在retrofit下载时调用
+     */
     public void registEventBus(){
         EventBus.getDefault().register(this);
     }

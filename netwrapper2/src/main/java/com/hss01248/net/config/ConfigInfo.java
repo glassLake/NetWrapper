@@ -21,7 +21,7 @@ public class ConfigInfo {
 
     //緩存控制
     public boolean forceGetNet = true;
-    public boolean shouldCache = false;
+    public boolean shouldReadCache = false;
     public long cacheTime = NetDefaultConfig.CACHE_TIME;
 
 

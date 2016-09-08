@@ -19,8 +19,14 @@ import java.util.Map;
  * Created by Administrator on 2016/9/5 0005.
  */
 public class VolleyAdapter extends NetAdapter<Request> {
-    static RequestQueue requestQueue ;
+    public  RequestQueue getRequestQueue() {
+        return requestQueue;
+    }
+
+    private static RequestQueue requestQueue ;
     private static VolleyAdapter instance;
+
+
 
     private VolleyAdapter(Context context){
         requestQueue =  Volley.newRequestQueue(context);
@@ -51,7 +57,7 @@ public class VolleyAdapter extends NetAdapter<Request> {
 
     @Override
     protected void cacheControl(ConfigInfo configInfo, Request request) {
-        request.setShouldCache(configInfo.shouldCache);
+        request.setShouldCache(configInfo.shouldReadCache);
         request.setCacheTime(configInfo.cacheTime);
         request.setForceGetNet(configInfo.forceGetNet);
     }
