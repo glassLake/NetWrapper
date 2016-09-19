@@ -8,7 +8,6 @@ import com.hss01248.net.config.ConfigInfo;
 import com.hss01248.net.config.NetDefaultConfig;
 import com.hss01248.net.retrofit.MyRetrofitUtil;
 import com.hss01248.net.retrofit.RetrofitAdapter;
-import com.hss01248.net.retrofit.RetrofitUtil2;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -56,7 +55,7 @@ public class CommonHelper {
 
     public static void parseStringResponseInTime(long time, final String response, final int method,
                                                  final String url, final Map map, final ConfigInfo configInfo,
-                                                 final MyNetCallback myListener) {
+                                                 final MyNetListener myListener) {
         long time2 = System.currentTimeMillis();
         long gap = time2 - time;
 
@@ -73,8 +72,7 @@ public class CommonHelper {
         }
     }
 
-    public static void parseErrorInTime(long time, final String error,final ConfigInfo configInfo,
-                                                 final MyNetCallback myListener) {
+    public static void parseErrorInTime(long time, final String error,final ConfigInfo configInfo) {
         long time2 = System.currentTimeMillis();
         long gap = time2 - time;
 
@@ -82,19 +80,56 @@ public class CommonHelper {
             TimerUtil.doAfter(new TimerTask() {
                 @Override
                 public void run() {
-                   myListener.onError(error);
+                    configInfo.listener.onError(error);
                 }
             },(NetDefaultConfig.TIME_MINI - gap));
 
         }else {
-            myListener.onError(error);
+            configInfo.listener.onError(error);
+        }
+    }
+
+
+    public static <T> void parseSuccessInTime(long time, final T responseBody,final ConfigInfo configInfo
+                                        ) {
+        long time2 = System.currentTimeMillis();
+        long gap = time2 - time;
+
+        if (configInfo.isForceMinTime && (gap < NetDefaultConfig.TIME_MINI)){
+            TimerUtil.doAfter(new TimerTask() {
+                @Override
+                public void run() {
+                    configInfo.listener.onSuccess(responseBody,responseBody+"");
+                }
+            },(NetDefaultConfig.TIME_MINI - gap));
+
+        }else {
+            configInfo.listener.onSuccess(responseBody,responseBody+"");
+        }
+    }
+
+    public static <T> void parseInTime(long time, final Runnable runnable, ConfigInfo<T> configInfo
+    ) {
+        long time2 = System.currentTimeMillis();
+        long gap = time2 - time;
+
+        if (configInfo.isForceMinTime && (gap < NetDefaultConfig.TIME_MINI)){
+            TimerUtil.doAfter(new TimerTask() {
+                @Override
+                public void run() {
+                    runnable.run();
+                }
+            },(NetDefaultConfig.TIME_MINI - gap));
+
+        }else {
+            runnable.run();
         }
     }
 
 
 
     private static void parseStringResponse(String response, int method, String urlTail, Map map,
-                                           ConfigInfo configInfo, MyNetCallback myListener) {
+                                           ConfigInfo configInfo, MyNetListener myListener) {
 
         switch (configInfo.resonseType){
             case ConfigInfo.TYPE_STRING:
@@ -149,7 +184,7 @@ public class CommonHelper {
 
     private static void parseStandardJsonResponse(JSONObject jsonObject, String response, String data, int code,
                                            String msg, final int method, final String urlTail, final Map map,
-                                           final ConfigInfo configInfo, final MyNetCallback myListener) {
+                                           final ConfigInfo configInfo, final MyNetListener myListener) {
 
         switch (code){
             case BaseNetBean.CODE_SUCCESS://请求成功
@@ -168,11 +203,11 @@ public class CommonHelper {
             case BaseNetBean.CODE_UNLOGIN://未登录
 
                 //todo
-                MyRetrofitUtil.autoLogin(new MyNetCallback() {
+                MyRetrofitUtil.autoLogin(new MyNetListener() {
                     @Override
                     public void onSuccess(Object response, String resonseStr) {
-                        // todo sendRequest(method,  urlTail,  map,  configInfo,  myListener);
-                        RetrofitAdapter.getInstance().sendRequest(method,urlTail,map,configInfo,myListener);
+                        // todo assembleRequest(method,  urlTail,  map,  configInfo,  myListener);
+                        RetrofitAdapter.getInstance().assembleRequest(method,urlTail,map,configInfo,myListener);
                     }
 
                     @Override
@@ -191,9 +226,16 @@ public class CommonHelper {
     }
 
 
-    public static <E> void parseStandardJsonObj(BaseNetBean<E> baseBean, final String urlTail,
-                                                final Map<String, String> params, final MyNetCallback<E> myListener,
-                                                final RetrofitUtil2 retrofitUtil2){
+    /**
+     * 解析标准json的方法
+     * @param time
+     * @param baseBean
+     * @param configInfo
+     * @param adapter
+     * @param <E>
+     */
+    public static <E> void parseStandardJsonObj(long time,BaseNetBean<E> baseBean, final ConfigInfo<E> configInfo,
+                                                final RetrofitAdapter adapter){
         switch (baseBean.code){
             case BaseNetBean.CODE_SUCCESS://请求成功
 
@@ -201,18 +243,20 @@ public class CommonHelper {
                 [] ArrayList sieze=0 会被解析成一个空的list
                 * */
                 if (baseBean.data == null ) {//如果是{}或[]呢?data是否会为空?
-                    myListener.onEmpty();
+
+
+                    configInfo.listener.onEmpty();
                 } else {
 
                     if (baseBean.data instanceof List){
                         List data = (List) baseBean.data;
                         if (data.size() == 0){
-                            myListener.onEmpty();
+                            configInfo.listener.onEmpty();
                         }else {
-                            myListener.onSuccess(baseBean.data,"");
+                            configInfo.listener.onSuccess(baseBean.data,"");
                         }
                     }else {
-                        myListener.onSuccess(baseBean.data,"");//todo 空怎么搞?
+                        configInfo.listener.onSuccess(baseBean.data,"");//todo 空怎么搞?
                     }
 
 
@@ -220,31 +264,31 @@ public class CommonHelper {
                 }
                 break;
             case BaseNetBean.CODE_UN_FOUND://没有找到内容
-                myListener.onUnFound();
+                configInfo.listener.onUnFound();
                 break;
             case BaseNetBean.CODE_UNLOGIN://未登录
-                retrofitUtil2.autoLogin(new MyNetCallback() {
+                adapter.autoLogin(new MyNetListener() {
                     @Override
                     public void onSuccess(Object response, String resonseStr) {
-                        retrofitUtil2.postStandard(urlTail,params,myListener);
+                        adapter.postStandard(urlTail,params,myListener);
                     }
 
                     @Override
                     public void onError(String error) {
                         super.onError(error);
-                        myListener.onUnlogin();
+                        configInfo.listener.onUnlogin();
                     }
                 });
                 break;
 
             default:
-                myListener.onError("code:"+baseBean.code + ", msg:"+baseBean.msg);
+                configInfo.listener.onCodeError("",baseBean.msg,baseBean.code);
                 break;
         }
     }
 
 
-    public static boolean writeFile(final InputStream is, final String path,final MyNetCallback callback){
+    public static boolean writeFile(final InputStream is, final String path,final MyNetListener callback){
         try {
             // todo change the file location/name according to your needs
             File futureStudioIconFile = new File(path);

@@ -1,13 +1,9 @@
 package com.hss01248.net.wrapper;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 
-import com.android.volley.DefaultRetryPolicy;
-import com.android.volley.Request;
-import com.android.volley.RetryPolicy;
 import com.hss01248.net.config.ConfigInfo;
-import com.hss01248.net.config.NetDefaultConfig;
+import com.hss01248.net.config.HttpMethod;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +11,7 @@ import java.util.Map;
 /**
  * Created by Administrator on 2016/9/5 0005.
  */
-public abstract class NetAdapter<T> implements Netable{
+public abstract class NetAdapter<T> implements Netable<T>{
 
     private static final String TAG = "NetAdapter";
     public  Context context;
@@ -26,20 +22,23 @@ public abstract class NetAdapter<T> implements Netable{
     }
 
 
+    /**
+     * 将configinfo组装成请求
+     * @param configInfo
+     * @return
+     */
+    public <E> T assembleRequest(final ConfigInfo<E> configInfo){
+        String url = CommonHelper.appendUrl(configInfo.url,isAppend());
+
+        configInfo.listener.url = url;
+
+        if (configInfo.isAppendToken){
+            CommonHelper.addToken(configInfo.params);
+        }
 
 
+        T request = generateNewRequest(configInfo);
 
-
-
-    public T sendRequest(final int method, final String urlTail, final Map map, final ConfigInfo configInfo,
-                            final MyNetCallback myListener){
-        String url = CommonHelper.appendUrl(urlTail,isAppend());
-
-        myListener.url = url;
-
-        CommonHelper.addToken(map);
-
-        T request = generateNewRequest(method,url,map,configInfo,myListener);
 
         setInfoToRequest(configInfo,request);
 
@@ -59,41 +58,45 @@ public abstract class NetAdapter<T> implements Netable{
 
     protected abstract void cacheControl(ConfigInfo configInfo, T request);
 
-    protected T generateNewRequest(int method, String url, Map map,
-                                       ConfigInfo configInfo, MyNetCallback myListener) {
-        int requestType = configInfo.resonseType;
+    protected <E> T generateNewRequest(ConfigInfo<E> configInfo) {
+        int requestType = configInfo.type;
         switch (requestType){
             case ConfigInfo.TYPE_STRING:
+                return  newCommonStringRequest(configInfo);
             case ConfigInfo.TYPE_JSON:
+                return newCommonJsonRequest(configInfo);
             case ConfigInfo.TYPE_JSON_FORMATTED:
-                return newStringRequest(method,url,map,configInfo,myListener);
+                return newStandardJsonRequest(configInfo);
             case ConfigInfo.TYPE_DOWNLOAD:
-                return newDownloadRequest(method,url,map,configInfo,myListener);
-            case ConfigInfo.TYPE_UPLOAD:
-                return newSingleUploadRequest(method,url,map,configInfo,myListener);
+                return newDownloadRequest(configInfo);
+            case ConfigInfo.TYPE_UPLOAD_SINGLE:
+                return newSingleUploadRequest(configInfo);
+            case ConfigInfo.TYPE_UPLOAD_MULTIPLE:
+                return newMultiUploadRequest(configInfo);
         }
         return null;
     }
 
-    protected abstract T newSingleUploadRequest(int method, String url, Map map, ConfigInfo configInfo, MyNetCallback myListener);
+    protected abstract <E> T newStandardJsonRequest(ConfigInfo<E> configInfo);
 
-    protected abstract T newDownloadRequest(int method, String url, Map map, ConfigInfo configInfo, MyNetCallback myListener);
+    protected abstract <E> T newCommonJsonRequest(ConfigInfo<E> configInfo);
 
-    protected abstract T newStringRequest(int method, String url, Map map, ConfigInfo configInfo, MyNetCallback myListener);
+    protected abstract T newMultiUploadRequest(ConfigInfo configInfo);
+
+    protected abstract T newSingleUploadRequest(ConfigInfo configInfo);
+
+    protected abstract T newDownloadRequest(ConfigInfo configInfo);
+
+    protected abstract T newCommonStringRequest(ConfigInfo configInfo);
 
 
 
 
     protected abstract void setInfoToRequest(ConfigInfo configInfo,T request);
 
-    protected RetryPolicy generateRetryPolicy(ConfigInfo configInfo) {
+   /* protected RetryPolicy generateRetryPolicy(ConfigInfo configInfo) {
         return new DefaultRetryPolicy(configInfo.timeout,configInfo.retryCount,1.0f);
     }
-
-
-
-
-
 
 
     protected Request.Priority getPriority(int priority) {
@@ -109,81 +112,96 @@ public abstract class NetAdapter<T> implements Netable{
         }
         return Request.Priority.NORMAL;
 
-    }
+    }*/
 
 
     public abstract void cancleRequest(Object tag);
 
-
-
-
-
-
-
-
-
-    public T getString(@NonNull String url, @NonNull Map map, String tag, final MyNetCallback listener){
-
-        ConfigInfo info = new ConfigInfo();
+   /* @Override
+    public <E> T getString(String url, Map map, String tag, MyNetListener<E> listener) {
+        ConfigInfo<E> info = new ConfigInfo();
+        setKeyInfo(info,url,map,tag,listener);
         info.tag = tag;
 
-       return sendRequest(NetDefaultConfig.Method.GET,url,map,info,listener);
+        return assembleRequest(info);
+    }*/
+   @Override
+   public <E> T getString( String url, Map map, String tag, final MyNetListener<E> listener){
+
+        ConfigInfo<E> info = new ConfigInfo();
+        setKeyInfo(info,url,map,tag,listener);
+        info.tag = tag;
+
+       return assembleRequest(info);
+    }
+
+    @Override
+    public <E> T postString(String url, Map map, String tag, MyNetListener<E> listener) {
+        ConfigInfo<E> info = new ConfigInfo();
+        setKeyInfo(info,url,map,tag,listener);
+        info.tag = tag;
+        info.method = HttpMethod.POST;
+
+        return assembleRequest(info);
+    }
+
+    @Override
+    public <E> T postStandardJsonResonse( String url,  Map map, String tag, final MyNetListener<E> listener){
+
+        ConfigInfo<E> info = new ConfigInfo();
+        setKeyInfo(info,url,map,tag,listener);
+        info.type = ConfigInfo.TYPE_JSON_FORMATTED;
+        info.method = HttpMethod.POST;
+        return assembleRequest(info);
+    }
+    @Override
+    public <E> T getStandardJsonResonse(String url, Map map, String tag, final MyNetListener<E> listener){
+        ConfigInfo<E> info = new ConfigInfo<E>();
+        setKeyInfo(info,url,map,tag,listener);
+        info.type = ConfigInfo.TYPE_JSON_FORMATTED;
+        return assembleRequest(info);
     }
 
 
-    public T postStandardJsonResonse(@NonNull String url, @NonNull Map map, String tag, final MyNetCallback listener){
+    @Override
+    public <E> T postCommonJsonResonse( String url,  Map map, String tag, final MyNetListener<E> listener){
 
-        ConfigInfo info = new ConfigInfo();
+        ConfigInfo<E> info = new ConfigInfo();
+        setKeyInfo(info,url,map,tag,listener);
+        info.method = HttpMethod.POST;
         info.tag = tag;
-        info.resonseType = ConfigInfo.TYPE_JSON_FORMATTED;
+        info.type = ConfigInfo.TYPE_JSON;
 
-        return sendRequest(NetDefaultConfig.Method.POST,url,map,info,listener);
+        return assembleRequest(info);
     }
 
-    public T getStandardJsonResonse(@NonNull String url, @NonNull Map map, String tag, final MyNetCallback listener){
-        ConfigInfo info = new ConfigInfo();
+    protected  <E> void setKeyInfo(ConfigInfo<E> info, String url, Map map, String tag, MyNetListener<E> listener){
+        info.url = url;
+        info.params = map;
         info.tag = tag;
-        info.resonseType = ConfigInfo.TYPE_JSON_FORMATTED;
-        return sendRequest(NetDefaultConfig.Method.GET,url,map,info,listener);
+        info.listener = listener;
     }
 
-
-
-    public T postCommonJsonResonse(@NonNull String url, @NonNull Map map, String tag, final MyNetCallback listener){
-
-        ConfigInfo info = new ConfigInfo();
-        info.tag = tag;
-        info.resonseType = ConfigInfo.TYPE_JSON;
-
-        return sendRequest(NetDefaultConfig.Method.POST,url,map,info,listener);
-    }
-
-    public T getCommonJsonResonse(@NonNull String url, @NonNull Map map, String tag, final MyNetCallback listener){
-        ConfigInfo info = new ConfigInfo();
-        info.tag = tag;
-        info.resonseType = ConfigInfo.TYPE_JSON;
-        return sendRequest(NetDefaultConfig.Method.GET,url,map,info,listener);
+    @Override
+    public <E> T getCommonJsonResonse( String url,  Map map, String tag, final MyNetListener<E> listener){
+        ConfigInfo<E> info = new ConfigInfo<E>();
+        setKeyInfo(info,url,map,tag,listener);
+        info.type = ConfigInfo.TYPE_JSON;
+        return assembleRequest(info);
     }
 
 
-
-    public T download(String url,String savedpath,MyNetCallback callback){
-        ConfigInfo info = new ConfigInfo();
-        info.tag = url;
-        info.resonseType = ConfigInfo.TYPE_DOWNLOAD;
+    @Override
+    public <E> T download(String url,String savedpath,MyNetListener<E> listener){
+        ConfigInfo<E> info = new ConfigInfo();
+        setKeyInfo(info,url,new HashMap(),"",listener);
+        info.isAppendToken = false;
+        info.type = ConfigInfo.TYPE_DOWNLOAD;
         info.filePath = savedpath;
         info.timeout = 0;
-        return  sendRequest(NetDefaultConfig.Method.GET,url,new HashMap(),info,callback);
+        return  assembleRequest(info);
 
     }
 
-    @Override
-    public Object autoLogin() {
-        return null;
-    }
 
-    @Override
-    public Object autoLogin(MyNetCallback myNetListener) {
-        return null;
-    }
 }

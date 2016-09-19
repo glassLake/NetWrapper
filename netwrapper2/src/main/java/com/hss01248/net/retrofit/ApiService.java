@@ -55,6 +55,17 @@ public interface  ApiService {
 
 
 
+    /**
+     * 普通格式的json(data,msg,code)解析:泛型嵌套
+     * */
+    @FormUrlEncoded
+    @POST()
+    <T>  Call<T> postCommonJson(@Url String url, @FieldMap Map<String, String> maps);
+
+    @GET()
+    <T>  Call<T> getCommonJson(@Url String url, @QueryMap Map<String, String> maps);
+
+
 
 
    /* @GET()

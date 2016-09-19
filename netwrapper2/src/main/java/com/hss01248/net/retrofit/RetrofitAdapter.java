@@ -2,11 +2,13 @@ package com.hss01248.net.retrofit;
 
 import android.util.Log;
 
+import com.hss01248.net.config.BaseNetBean;
 import com.hss01248.net.config.ConfigInfo;
+import com.hss01248.net.config.HttpMethod;
 import com.hss01248.net.config.NetDefaultConfig;
 import com.hss01248.net.retrofit.progress.ProgressInterceptor;
 import com.hss01248.net.wrapper.CommonHelper;
-import com.hss01248.net.wrapper.MyNetCallback;
+import com.hss01248.net.wrapper.MyNetListener;
 import com.hss01248.net.wrapper.NetAdapter;
 
 import java.io.File;
@@ -14,7 +16,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import okhttp3.OkHttpClient;
@@ -117,18 +118,96 @@ public class RetrofitAdapter extends NetAdapter<Call> {
     }
 
     @Override
-    protected Call newSingleUploadRequest(int method, String url, Map map, ConfigInfo configInfo, MyNetCallback myListener) {
+    protected <E> Call newStandardJsonRequest(final ConfigInfo<E> configInfo) {
+        final long time = System.currentTimeMillis();
+
+        Call<BaseNetBean<E>> call;
+
+        if (configInfo.method == HttpMethod.GET){
+            call = service.getStandradJson(configInfo.url,configInfo.params);
+        }else if (configInfo.method == HttpMethod.POST){
+            call = service.postStandradJson(configInfo.url,configInfo.params);
+        }else {
+            call = null;
+            return call;
+        }
+        configInfo.tag = call;
+
+        call.enqueue(new Callback<BaseNetBean<E>>() {
+            @Override
+            public void onResponse(Call<BaseNetBean<E>> call, Response<BaseNetBean<E>> response) {
+                BaseNetBean<E> baseBean = response.body();
+                CommonHelper.parseStandardJsonObj(time,baseBean,configInfo,RetrofitAdapter.this);
+
+            }
+
+            @Override
+            public void onFailure(Call<BaseNetBean<E>> call, Throwable t) {
+               CommonHelper.parseErrorInTime(time,t.toString(),configInfo);
+
+            }
+        });
+        return call;
+    }
+
+    @Override
+    protected <E> Call newCommonJsonRequest(final ConfigInfo<E> configInfo) {
+        final long time = System.currentTimeMillis();
+
+        final Call<E> call;
+
+        if (configInfo.method == HttpMethod.GET){
+            call = service.getCommonJson(configInfo.url,configInfo.params);
+        }else if (configInfo.method == HttpMethod.POST){
+            call = service.postCommonJson(configInfo.url,configInfo.params);
+        }else {
+            call = null;
+            return call;
+        }
+        configInfo.tag = call;
+
+        call.enqueue(new Callback<E>() {
+            @Override
+            public void onResponse(Call<E> call, final Response<E> response) {
+                final E baseBean = response.body();
+                CommonHelper.parseInTime(time, new Runnable() {
+                    @Override
+                    public void run() {
+                        configInfo.listener.onSuccess(baseBean,baseBean.toString());
+                    }
+                }, configInfo);
+
+            }
+
+            @Override
+            public void onFailure(Call<E> call, Throwable t) {
+                CommonHelper.parseErrorInTime(time,t.toString(),configInfo);
+
+            }
+        });
+        return call;
+    }
+
+    @Override
+    protected Call newMultiUploadRequest(ConfigInfo configInfo) {
         return null;
     }
 
     @Override
-    protected Call newDownloadRequest(int method, String url, Map map, final ConfigInfo configInfo, final MyNetCallback myListener) {
+    protected Call newSingleUploadRequest( ConfigInfo configInfo) {
+        return null;
+    }
 
+    @Override
+    protected Call newDownloadRequest( final ConfigInfo configInfo) {
+        final long time = System.currentTimeMillis();
         if (serviceDownload == null){
             initDownload();
         }
-        Call<ResponseBody> call = serviceDownload.download(url);
-        myListener.registEventBus();
+        Call<ResponseBody> call = serviceDownload.download(configInfo.url);
+        configInfo.listener.registEventBus();
+
+        configInfo.tag = call;
 
         //todo 改成在子线程中执行
 
@@ -137,53 +216,58 @@ public class RetrofitAdapter extends NetAdapter<Call> {
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 Log.e("download","onResponse finished");
                 //开子线程将文件写到指定路径中
-                writeResponseBodyToDisk(response.body(),configInfo.filePath,myListener);
+                writeResponseBodyToDisk(response.body(),configInfo.filePath,configInfo.listener);
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                myListener.onError(t.toString());
+                CommonHelper.parseErrorInTime(time,t.toString(),configInfo);
             }
         });
         return call;
     }
 
     @Override
-    protected Call newStringRequest(final int method, final String url, final Map map, final ConfigInfo configInfo, final MyNetCallback myListener) {
+    protected Call newCommonStringRequest(final ConfigInfo configInfo) {
 
-        Log.e("url","newStringRequest:"+url);
+        Log.e("url","newCommonStringRequest:"+configInfo.url);
         //todo 分方法:
+        final long time = System.currentTimeMillis();
         Call<ResponseBody> call;
 
-        if (method == NetDefaultConfig.Method.GET){
-            call = service.executGet(url,map);
-        }else if (method == NetDefaultConfig.Method.POST){
-            call = service.executePost(url,map);
+        if (configInfo.method == HttpMethod.GET){
+            call = service.executGet(configInfo.url,configInfo.params);
+        }else if (configInfo.method == HttpMethod.POST){
+            call = service.executePost(configInfo.url,configInfo.params);
         }else {
             call = null;
+            return call;
         }
 
+        configInfo.tag = call;
 
-        final long time = System.currentTimeMillis();
+
+
         call.enqueue(new Callback<ResponseBody>() {
             @Override
             public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
                 String string = "";
                 try {
                     string =  response.body().string();
-                    CommonHelper.parseStringResponseInTime(time,string,method,url,map,configInfo,myListener);
+                    CommonHelper.parseSuccessInTime(time,string,configInfo);
                 } catch (IOException e) {
                     e.printStackTrace();
-                    CommonHelper.parseErrorInTime(time,e.toString(),configInfo,myListener);
+                    CommonHelper.parseErrorInTime(time,e.toString(),configInfo);
                 }
 
             }
 
             @Override
             public void onFailure(Call<ResponseBody> call, Throwable t) {
-                CommonHelper.parseErrorInTime(time,t.toString(),configInfo,myListener);
+                CommonHelper.parseErrorInTime(time,t.toString(),configInfo);
             }
         });
+
         return call;
     }
 
@@ -210,7 +294,7 @@ public class RetrofitAdapter extends NetAdapter<Call> {
     }
 
 
-    private boolean writeResponseBodyToDisk(ResponseBody body,String path,MyNetCallback callback) {
+    private boolean writeResponseBodyToDisk(ResponseBody body,String path,MyNetListener callback) {
         try {
             // todo change the file location/name according to your needs
             File futureStudioIconFile = new File(path);

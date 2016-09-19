@@ -10,7 +10,7 @@ import org.greenrobot.eventbus.ThreadMode;
 /**
  * Created by Administrator on 2016/4/15 0015.
  */
-public abstract class MyNetCallback<T> {
+public abstract class MyNetListener<T> {
 
     public String url;
 

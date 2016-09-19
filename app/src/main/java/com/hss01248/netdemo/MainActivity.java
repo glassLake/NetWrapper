@@ -11,7 +11,7 @@ import com.hss01248.net.config.BaseNetBean;
 import com.hss01248.net.retrofit.RetrofitAdapter;
 import com.hss01248.net.volley.VolleyAdapter;
 import com.hss01248.net.wrapper.MyJson;
-import com.hss01248.net.wrapper.MyNetCallback;
+import com.hss01248.net.wrapper.MyNetListener;
 
 import org.json.JSONObject;
 
@@ -65,7 +65,7 @@ public class MainActivity extends Activity {
                 Map<String, String> map = new HashMap<String, String>();
                // map.put("id", "145");
                 RetrofitAdapter.getInstance().postStandardJsonResonse("api/voice/categoryList/v1.json",
-                        map, "kk", new MyNetCallback<JSONObject>() {
+                        map, "kk", new MyNetListener<JSONObject>() {
                     @Override
                     public void onSuccess(JSONObject response, String resonseStr) {
                         Log.e("postStandardJsonResonse","onSuccess");
@@ -94,7 +94,7 @@ public class MainActivity extends Activity {
                     }
                 }
                 String path = file.getAbsolutePath();
-                VolleyAdapter.getInstance(this).download("http://www.qxinli.com/download/qxinli.apk", path, new MyNetCallback<String>() {
+                VolleyAdapter.getInstance(this).download("http://www.qxinli.com/download/qxinli.apk", path, new MyNetListener<String>() {
                     @Override
                     public void onSuccess(String response, String resonseStr) {
                         Log.e("download","onSuccess:"+ response);

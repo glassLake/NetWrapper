@@ -1,25 +1,10 @@
 package com.hss01248.net.volley;
 
-import android.content.Context;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.error.VolleyError;
-import com.android.volley.request.DownloadRequest;
-import com.android.volley.toolbox.Volley;
-import com.hss01248.net.config.ConfigInfo;
-import com.hss01248.net.wrapper.CommonHelper;
-import com.hss01248.net.wrapper.MyNetCallback;
-import com.hss01248.net.wrapper.NetAdapter;
-
-import java.util.Map;
-
 /**
  * Created by Administrator on 2016/9/5 0005.
  */
-public class VolleyAdapter extends NetAdapter<Request> {
-    public  RequestQueue getRequestQueue() {
+public class VolleyAdapter {
+   /* public  RequestQueue getRequestQueue() {
         return requestQueue;
     }
 
@@ -59,16 +44,16 @@ public class VolleyAdapter extends NetAdapter<Request> {
     protected void cacheControl(ConfigInfo configInfo, Request request) {
         request.setShouldCache(configInfo.shouldReadCache);
         request.setCacheTime(configInfo.cacheTime);
-        request.setForceGetNet(configInfo.forceGetNet);
+        request.setForceGetNet(configInfo.shouldReadCache);
     }
 
     @Override
-    protected Request newSingleUploadRequest(int method, String url, Map map, ConfigInfo configInfo, MyNetCallback myListener) {
+    protected Request newSingleUploadRequest(int method, String url, Map map, ConfigInfo configInfo, MyNetListener myListener) {
         return null;
     }
 
     @Override
-    protected Request newDownloadRequest(int method, String url, Map map, final ConfigInfo configInfo, final MyNetCallback myListener) {
+    protected Request newDownloadRequest(int method, String url, Map map, final ConfigInfo configInfo, final MyNetListener myListener) {
         DownloadRequest request =
                 new DownloadRequest(url, configInfo.filePath, new Response.Listener<String>() {
                     @Override
@@ -95,7 +80,7 @@ public class VolleyAdapter extends NetAdapter<Request> {
     }
 
     @Override
-    protected Request newStringRequest(final int method, final String url, final Map map, final ConfigInfo configInfo, final MyNetCallback myListener) {
+    protected Request newStringRequest(final int method, final String url, final Map map, final ConfigInfo configInfo, final MyNetListener myListener) {
         final long time = System.currentTimeMillis();
         return new MyBaseStringRequest(method,url, getPriority(configInfo.priority),new Response.Listener<String>() {
             @Override
@@ -124,5 +109,5 @@ public class VolleyAdapter extends NetAdapter<Request> {
     @Override
     public void cancleRequest(Object tag) {
         requestQueue.cancelAll(tag);
-    }
+    }*/
 }

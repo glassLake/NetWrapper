@@ -1,22 +1,10 @@
 package com.hss01248.net.volley;
 
-import android.util.Log;
-
-import com.android.volley.NetworkResponse;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.RetryPolicy;
-import com.android.volley.error.AuthFailureError;
-import com.android.volley.toolbox.HttpHeaderParser;
-
-import java.io.UnsupportedEncodingException;
-import java.util.Map;
-
 /**
  * Created by Administrator on 2016/9/4.
  */
-public class MyBaseStringRequest extends Request<String> {
-    protected Map<String,String> mMap;
+public class MyBaseStringRequest  {//extends Request<String>
+   /* protected Map<String,String> mMap;
 
     private Response.Listener<String> mListener;
 
@@ -114,10 +102,10 @@ public class MyBaseStringRequest extends Request<String> {
 
     }
 
-    /**
+    *//**
      * 缓存key的生成规则:url+body
      * @return
-     */
+     *//*
     @Override
     public String getCacheKey() {
         String bodyStr = "";
@@ -138,5 +126,5 @@ public class MyBaseStringRequest extends Request<String> {
         }
 
 
-    }
+    }*/
 }

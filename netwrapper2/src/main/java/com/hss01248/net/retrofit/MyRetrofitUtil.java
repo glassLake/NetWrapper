@@ -1,9 +1,8 @@
 package com.hss01248.net.retrofit;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
 
-import com.hss01248.net.wrapper.MyNetCallback;
+import com.hss01248.net.wrapper.MyNetListener;
 
 import java.util.Map;
 
@@ -28,27 +27,27 @@ public class MyRetrofitUtil  {
     }
 
 
-    public Call getString(@NonNull String url, @NonNull Map map,  MyNetCallback listener) {
+    public Call getString( String url,  Map map,  MyNetListener listener) {
         return RetrofitAdapter.getInstance().getString(url,map,"",listener);
     }
 
 
-    public Call postStandardJsonResonse(@NonNull String url, @NonNull Map map,  MyNetCallback listener) {
+    public <T> Call postStandardJsonResonse( String url,  Map map,  MyNetListener<T> listener) {
         return RetrofitAdapter.getInstance().postStandardJsonResonse(url,map,"",listener);
     }
 
 
-    public Call getStandardJsonResonse(@NonNull String url, @NonNull Map map,  MyNetCallback listener) {
+    public <T> Call getStandardJsonResonse( String url,  Map map,  MyNetListener<T> listener) {
         return RetrofitAdapter.getInstance().getStandardJsonResonse(url,map,"",listener);
     }
 
 
-    public Call postCommonJsonResonse(@NonNull String url, @NonNull Map map,  MyNetCallback listener) {
+    public <T> Call postCommonJsonResonse( String url,  Map map,  MyNetListener<T> listener) {
         return RetrofitAdapter.getInstance().postCommonJsonResonse(url,map,"",listener);
     }
 
 
-    public Call getCommonJsonResonse(@NonNull String url, @NonNull Map map,  MyNetCallback listener) {
+    public <T> Call getCommonJsonResonse( String url,  Map map,  MyNetListener<T> listener) {
         return RetrofitAdapter.getInstance().getCommonJsonResonse(url,map,"",listener);
     }
 
@@ -58,7 +57,7 @@ public class MyRetrofitUtil  {
     }
 
 
-    public static Call autoLogin(MyNetCallback myNetListener) {
+    public static Call autoLogin(MyNetListener myNetListener) {
         return null;
     }
 
@@ -68,7 +67,7 @@ public class MyRetrofitUtil  {
     }
 
 
-    public Call download(String url, String savedpath, MyNetCallback callback) {
+    public Call download(String url, String savedpath, MyNetListener callback) {
         return RetrofitAdapter.getInstance().download(url,savedpath,callback);
     }
 }
